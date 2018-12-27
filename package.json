@@ -1,0 +1,19 @@
+{
+  "name": "reviewnode",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "express": "^4.16.4",
+    "formidable": "^1.2.1",
+    "jade": "^1.11.0",
+    "mime": "^2.4.0",
+    "silly-datetime": "^0.1.2"
+  }
+}
