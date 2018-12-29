@@ -10,14 +10,22 @@ app.get("/", (req, res) => {
 });
 
 app.get("/dbjson", (req, res) => {
-    DB.connect("reviewNode", (err, db) => {
-        if (err) {
-            console.log("连接数据库失败");
-            console.log(err);
-            return;
-        }
+    // DB.connect("reviewNode", (err, db) => {
+    //     if (err) {
+    //         console.log("连接数据库失败");
+    //         console.log(err);
+    //         return;
+    //     }
 
-        console.log(db.collection("user").find());
+    //     console.log(db.collection("user").find());
+    // });
+
+    DB.getDocumentsByColName("reviewNode", "user", { score: { $lt: 60 } }, (err, data) => {
+        if (err) {
+            console.log("连接失败");
+            res.send("连接失败啦");
+        }
+        res.send(JSON.stringify(data));
     });
 });
 
