@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>用户注册</title>
+    <link rel="stylesheet" href="./css/index.css">
+</head>
+
+<body>
+
+    <!-- <img src="./img/3.png" alt=""> -->
+    <!-- <img src="./img/4.jpg" alt=""> -->
+
+    <form id="form" action="http://localhost:8888/doregister" method="POST" enctype="multipart/form-data">
+        用户名： <input type="text" name="username"> 密码 <input type="password" name="password"> 年龄 <input type="number" name="age">
+        <input type="file" name="avatar">
+        <input type="button" value="提交" id="postform">
+    </form>
+
+
+
+    <script src="./js/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#postform").on("click", function() {
+                alert("上传");
+
+                let username = $("#form input[name='username']").val();
+                let password = $("#form input[name='password']").val();
+                let age = $("#form input[name='age']").val();
+
+                let avatar = $("#form input[name='avatar']").val();
+                console.log(username, password, age);
+
+                $.ajax({
+                    url: "/doregister",
+                    type: "POST",
+                    data: {
+                        username: username,
+                        password: password,
+                        age: age,
+                        avatar: avatar
+                    },
+                    contentType: "application/x-www-form-urlencoded",
+                    success: function(res) {
+                        console.log("上传成功");
+                        alert(res);
+                        window.location.href = "/"
+                    },
+
+                    complete: function() {
+                        $("#form input[name='password']").val("");
+                    },
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
