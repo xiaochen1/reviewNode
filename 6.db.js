@@ -1,16 +1,30 @@
 const express = require("express");
+const session = require("express-session");
 
 const DB = require("./model/db.js");
 const formidable = require("formidable");
 
 let app = express();
+app.use(session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+}));
+
 app.set("view engine", "ejs");
 
 
 app.use(express.static("./static"));
 app.use(express.static("./upload"));
 
-
+app.use((req, res, next) => {
+    if (req.session) {
+        if (req.session.login == 1) {
+            next();
+        }
+    }
+    next();
+});
 app.get("/", (req, res) => {
     res.send("跟路由");
 });
@@ -34,6 +48,10 @@ app.get("/dbjson", (req, res) => {
 
 app.get("/register", (req, res) => {
     res.render("register");
+});
+
+app.get("/login", (req, res) => {
+    res.render("login");
 });
 
 
@@ -62,8 +80,93 @@ app.post("/doregister", (req, res) => {
 
 });
 
+app.post("/dologin", (req, res) => {
+    let form = new formidable.IncomingForm();
+    if (req.session) {
+        console.log(req.session);
+        console.log("session---->>>>>>>>>>" + req.session.userid);
+    }
+
+    form.parse(req, (err, fields, files) => {
+        if (err) {
+            res.send("登录失败");
+            return;
+        }
+        let loginInfo = {};
+        loginInfo.username = fields.username;
+        loginInfo.password = fields.password;
+
+        DB.checkLogin(loginInfo, (err, result) => {
+            if (err) {
+                res.send(result);
+                return;
+            }
+            console.log("开始返回数据");
+            console.log(result);
+            req.session.userid = result.data._id || "";
+            req.session.login = 1;
+            res.send(result);
+        });
+    });
+});
+
+
+app.post("/zone/add", (req, res) => {
+    let form = new formidable.IncomingForm();
+    form.parse(req, (err, fields, files) => {
+        if (err) {
+            return;
+
+        }
+
+        let username = fields.username;
+        let content = fields.content;
+        let info = {
+            username: username,
+            content: content,
+        }
+
+        let returnResult = {};
+        DB.addShuoShuo(info, (err, result) => {
+            if (err) {
+                res.send(err, null);
+                return;
+            }
+
+            res.send(result);
+        });
+    });
+
+});
+
+app.get("/zone", (req, res) => {
+    console.log(req.session.userid);
+    let userid = req.session.userid;
+    DB.getShuoList("heh", (err, data) => {
+        if (err) {
+            res.render("zone", {
+                data: [{
+                    username: "hah",
+                    content: "这是内容啊"
+                }]
+            });
+
+            return;
+        }
+
+        console.log(data);
+
+        res.render("zone", {
+            data: data.allShuoShuo,
+            users: data.allUser,
+        });
+
+
+    });
+
+});
+
 
 
 
 app.listen(8888);
-console.log("listening on 8888");

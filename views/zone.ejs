@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>index首页</title>
+    <link rel="stylesheet" href="./css/index.css">
+
+
+    <style>
+        .shuo-item {
+            border-bottom: 1px solid red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>我的空间</h1>
+
+    当前用户
+    <select name="current_user" id="current_user">
+            <% for (let i=0; i<users.length;  i++) { %>
+                <option value="<%= users[i].username %>"><%= users[i].username %></option>
+             <%  } %>
+    </select>
+
+    <form action="/zone/add" method="POST" enctype="multipart/form-data" id="form">
+        <select name="username" id="username">
+                <% for (let i=0; i<users.length;  i++) { %>
+                        <option value="<%= users[i].username %>"><%= users[i].username %></option>
+                     <%  } %>
+        </select>
+        <input type="text" name="content" id="usercontent">
+        <input type="button" value="发表说说" id="toaddshuo">
+    </form>
+
+    <div class="main-container">
+        <div class="box" id="shuoshuobox">
+            <% for (let i=0; i<data.length; i++) { %>
+                <div class="shuo-item">
+                    <div class="username">
+                        <%= data[i].username %>
+                    </div>
+                    <div class="content">
+                        <%= data[i].content %>
+
+                            <span>发表时间：</span>
+                            <%=  data[i].created%>
+                    </div>
+                </div>
+                <% } %>
+        </div>
+    </div>
+
+
+    <script src="js/jquery.min.js"></script>
+    <script>
+        $("#toaddshuo").on("click", () => {
+            let username = $("#username").val();
+            let shuoshuo = $("#usercontent").val();
+
+
+            $.ajax({
+                url: "/zone/add",
+                type: "post",
+                data: {
+                    username: username,
+                    content: shuoshuo,
+                },
+                success: function(res) {
+                    if (res.result.ok == 1) {
+                        console.log("说说添加成功");
+
+
+                        let str = `<div class="shuo-item">
+                            <div class="username">` +
+                            res.data.username +
+                            `</div>
+                            <div class="content">
+                            ` +
+                            res.data.content +
+                            `<span>发表时间：</span>` +
+                            res.data.created +
+
+                            `
+                            </div>
+                        </div>`;
+                        $(str).insertBefore($("#shuoshuobox").children(".shuo-item").first());
+                        $("#usercontent").val("");
+
+                    }
+                }
+            });
+        });
+
+
+        // $(document).on("ready", function(){
+        //     $.ajax({
+        //         url: "/zone/list_user",
+        //         type: "post",
+        //         success: function() {
+
+        //         }
+        //     });
+        // });
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 const MongoClient = require("mongodb").MongoClient;
 const assert = require("assert");
+const SD = require("silly-datetime");
 const dburl = "mongodb://localhost:27017";
 const dbName = "reviewNode";
 
@@ -7,6 +8,10 @@ const dbName = "reviewNode";
 exports._connect = _connect;
 exports.getDocumentsByColName = getDocumentsByColName;
 exports.addUser = addUser; // 添加用户
+exports.register = register; // 注册用户
+exports.checkLogin = checkLogin;
+exports.getShuoList = getShuoList;
+exports.addShuoShuo = addShuoShuo;
 
 //数据库连接
 /**
@@ -14,13 +19,13 @@ exports.addUser = addUser; // 添加用户
  * @param {*数据库名称*} dbname 
  * @param {*回调函数*} cb 
  */
-function _connect(dbname, cb) {
+function _connect(cb) {
 
     let client = new MongoClient(dburl, { useNewUrlParser: true });
 
     client.connect((err) => {
         // assert.equal(null, err);
-        const db = client.db(dbname);
+        const db = client.db(dbName);
         console.log("client------->");
         console.log(client);
         console.log("db------->");
@@ -29,21 +34,6 @@ function _connect(dbname, cb) {
         console.log("client内容到此结束");
         cb(err, db, client);
     });
-
-
-    // MongoClient.connect(dburl, { useNewUrlParser: true }, (err, client) => {
-    //     if (!assert.equal(null, err)) {
-    //         cb(err, null);
-    //         return ;
-    //     }
-
-    //     console.log("Connected successfully to server, current mongo server on " + dburl);
-    //     console.log("dbname---->"+dbname);
-    //     let db = client.db(dbname);
-    //     cb(null, db);
-    //     console.log(db);
-    //     // client.close();
-    // });
 }
 
 
@@ -55,8 +45,8 @@ function _connect(dbname, cb) {
  * @param {查询时条件} option 
  * @param {回调函数} callback 
  */
-function getDocumentsByColName(dbname, colname, option = {}, opquery = { page_size: 10, page_index: 1 }, callback) {
-    _connect(dbname, (err, db, client) => {
+function getDocumentsByColName(colname, option = {}, opquery = { page_size: 10, page_index: 1 }, callback) {
+    _connect((err, db, client) => {
 
         assert.equal(err, null);
         console.log("getDocumentsByColName-------");
@@ -64,7 +54,7 @@ function getDocumentsByColName(dbname, colname, option = {}, opquery = { page_si
         console.log(client);
         assert.equal(null, err);
         console.log("根据集合名称获取集合中的数据");
-        console.log(dbname, colname);
+        console.log(colname);
         const collection = db.collection(colname);
         console.log(collection);
 
@@ -121,11 +111,11 @@ function getDocumentsByColName(dbname, colname, option = {}, opquery = { page_si
     });
 }
 
-//------ 用户（user）  相关操作-----------------------------------------------------
+//------ 用户表 （user）  相关操作-----------------------------------------------------
 
 // 增
 function addUser(info, cb) {
-    _connect(dbName, (err, db, client) => {
+    _connect((err, db, client) => {
         assert.equal(err, null);
         let user_coll = db.collection("user");
         user_coll.insertOne(info, {}, (err, result) => {
@@ -137,20 +127,125 @@ function addUser(info, cb) {
     });
 }
 
-
-
-
 // 查
 function getUserInfo(info, cb) {
 
 }
 
 
-
 /**
  * 
  * @param  info  用户信息
  */
-function register(info) {
-    _connect();
+function register(info, cb) {
+    addUser(info, cb);
+}
+
+
+function checkLogin(info, cb) {
+    _connect((err, db, client) => {
+        assert.equal(err, null);
+        let collection = db.collection("user");
+        let query = {
+            username: info.username || "",
+            password: info.password || ""
+        }
+        let returnResult = {};
+        console.log(info.username, info.password);
+        // let cursor = collection.find(query);
+        let cursor = collection.find(query);
+        cursor.toArray((err, docs) => {
+            if (err || docs.length == 0) {
+                returnResult.code = 500;
+                returnResult.msg = "用户名或密码错误";
+                returnResult.data = null;
+                cb(returnResult.msg, returnResult);
+                client.close();
+                return;
+            }
+            returnResult.code = 200;
+            returnResult.msg = "登录成功";
+            returnResult.data = docs[0];
+            cb(null, returnResult);
+            client.close();
+
+        });
+
+    });
+}
+
+
+function getShuoList(userid, cb) {
+    _connect((err, db, client) => {
+
+        if (err) {
+            cb(err, null);
+            return;
+        }
+        let collection = db.collection("shuoshuo");
+        let cursor = collection.find();
+        console.log("cursor-------------->");
+        console.log(cursor);
+
+        cursor.sort("created", -1).toArray((err, docs) => {
+            if (err) {
+                cb(err, null);
+                return;
+            }
+
+            docs = docs.map(element => {
+                element.created = SD.format(element.created, "YYYY-MM-DD HH:mm:ss");
+                return element;
+            });
+
+            console.log(docs);
+
+
+            let usercoll = db.collection("user");
+            let user_cursor = usercoll.find();
+            user_cursor.toArray((err, userdocs) => {
+                if (err) {
+                    cb(err, null);
+                    return;
+                }
+
+                let alluser = userdocs;
+                let returnResult = {};
+                returnResult.allShuoShuo = docs;
+                returnResult.allUser = userdocs;
+
+                cb(null, returnResult);
+
+            });
+        });
+    });
+}
+
+
+
+function addShuoShuo(info, cb) {
+    _connect((err, db, client) => {
+        if (err) {
+            cb(err, null);
+            return;
+
+        }
+
+        let collection = db.collection("shuoshuo");
+        // info.created = SD.format(new Date(), "YYYY-MM-DD HH:mm:ss");
+        info.created = new Date();
+        collection.insertOne(info, (err, result) => {
+            if (err) {
+                cb(err, null);
+                return;
+            }
+            info.created = SD.format(info.created, "YYYY-MM-DD HH:mm:ss");
+            cb(null, {
+                code: 200,
+                result: result,
+                data: info
+            });
+            client.close();
+        });
+    });
 }

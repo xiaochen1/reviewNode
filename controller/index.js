@@ -4,6 +4,8 @@ module.exports.showAlbum = showAlbum;
 module.exports.up = up;
 module.exports.upload = upload;
 
+module.exports.dologin = dologin;
+
 function showIndex(req, res) {
     file.getAllAlbums(function(err, data) {
         if (err) {
@@ -69,3 +71,7 @@ function upload(req, res) {
 //         data: file.getAllAlbums()
 //     });
 // }
+
+function dologin(req, res) {
+    // file.login(req, res);
+}
